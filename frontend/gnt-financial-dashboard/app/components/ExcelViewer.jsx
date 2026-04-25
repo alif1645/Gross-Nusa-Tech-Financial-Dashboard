@@ -110,7 +110,7 @@ export default function ExcelViewerEnhanced({ token }) {
                     📄 Excel File Viewer
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                    View any Excel file (.xlsx, .xls, .csv) regardless of its format or structure
+                    Mengecek file Excel (.xlsx, .xls, .csv) apapun formatnya.
                 </p>
                 
                 <div className="space-y-4">
@@ -141,7 +141,7 @@ export default function ExcelViewerEnhanced({ token }) {
                         disabled={!file || loading}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
-                        {loading ? '⏳ Loading...' : '👁️ View File'}
+                        {loading ? '⏳ Loading...' : '👁️ Cek Isi File'}
                     </button>
                 </div>
 
@@ -152,7 +152,7 @@ export default function ExcelViewerEnhanced({ token }) {
                 )}
             </div>
 
-            {/* Excel Data Display */}
+            {/* Display untuk Data Excel */}
             {excelData && excelData.sheets && (
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                     {/* File Info Header */}
@@ -260,10 +260,10 @@ export default function ExcelViewerEnhanced({ token }) {
             {/* Features Info */}
             {!excelData && !loading && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-                    <p className="font-semibold text-blue-900 mb-2">✨ Features:</p>
+                    <p className="font-semibold text-blue-900 mb-2">Features:</p>
                     <ul className="space-y-1 text-blue-800">
                         <li>• Mengecek file Excel apapun</li>
-                        <li>• Support untuk setiap jenis format filr Excel sheets</li>
+                        <li>• Support untuk setiap jenis format file Excel sheets</li>
                         <li>• Download akan menjadi format CSV</li>
                     </ul>
                 </div>

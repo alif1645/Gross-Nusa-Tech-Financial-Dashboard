@@ -280,15 +280,14 @@ export default function Dashboard() {
                                 <div className="space-y-6">
                                     <div>
                                         <h3 className="text-lg font-semibold mb-2">
-                                            Data Quality Management
-                                        </h3>
+                                            Data Cleaning
+                                        </h3> 
                                         <p className="text-gray-600 text-sm">
-                                            Find and fix issues in <strong>already-imported</strong> data: 
-                                            duplicates, missing descriptions, outliers, and unusual dates.
+                                            Membersihkan masalah-masalah di data yang telah <strong>telah diupload</strong>, seperti: 
+                                            duplikat, deskripsi record yang kosong, outlier, and penanggalan yang tidak biasa.
                                         </p>
                                         <div className="mt-3 bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
-                                            <strong>Note:</strong> This only cleans data already in your database. 
-                                            To fix rows that were skipped during upload, correct your Excel file and re-upload.
+                                            <strong>Note:</strong> Cuma berlaku untuk data yang telah ada di dalam database.
                                         </div>
                                     </div>
                                     <DataCleaning 
@@ -303,11 +302,10 @@ export default function Dashboard() {
                                 <div className="space-y-6">
                                     <div>
                                         <h3 className="text-lg font-semibold mb-2">
-                                            Advanced Data Analysis
+                                            Pivot Analysis
                                         </h3>
                                         <p className="text-gray-600 text-sm">
-                                            Create custom pivot tables to analyze your financial data 
-                                            from different perspectives and dimensions.
+                                            Membuat tabel custom untuk keperluan pivot data.
                                         </p>
                                     </div>
                                     <PivotTable token={auth.token} />
@@ -318,22 +316,19 @@ export default function Dashboard() {
 
                     {/* Help Section */}
                     <div className="bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-                        <h4 className="font-semibold text-blue-900 mb-3">💡 Quick Tips</h4>
+                        <h4 className="font-semibold text-blue-900 mb-3">💡 Masing-Masing Section </h4>
                         <ul className="space-y-2 text-sm text-blue-800">
                             <li>
-                                <strong>View Excel:</strong> Preview file Excel sebelum diimport untuk memastikan jika formatnya cocok
+                                <strong>View Excel:</strong> Preview file Excel sebelum di-import untuk memastikan jika formatnya cocok.
                             </li>
                             <li>
-                                <strong>Import Data:</strong> Rows with errors are skipped - fix your Excel and re-upload
+                                <strong>Import Data:</strong> Section untuk mengupload file Excel. Baris yang punya error akan di-skip, sisanya akan direview oleh sistem.
                             </li>
                             <li>
-                                <strong>Data Cleaning:</strong> Only cleans data already in database (not skipped rows)
+                                <strong>Data Cleaning:</strong> Membersihkan data yang telah diupload ke database.
                             </li>
                             <li>
-                                <strong>Pivot Analysis:</strong> Membuat laporan dengan mengelompokkan data dengan cara berbeda
-                            </li>
-                            <li>
-                                <strong>Auto-Load:</strong> Data otomatis terload kembali jika halaman di-refresh
+                                <strong>Pivot Analysis:</strong> Membuat pivot dengan mengelompokkan data dengan cara sesuai kemauan.
                             </li>
                         </ul>
                     </div>

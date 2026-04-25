@@ -115,7 +115,7 @@ class ExcelController extends Controller
                         $skipped++;
                         $errors[] = [
                             'row' => $index + 2,
-                            'error' => "Invalid category: '{$row[1]}'. Must be text, not a number"
+                            'error' => "Invalid category: '{$row[1]}'. Harus teks"
                         ];
                         continue;
                     }
@@ -125,7 +125,7 @@ class ExcelController extends Controller
                         $skipped++;
                         $errors[] = [
                             'row' => $index + 2,
-                            'error' => "Invalid amount: '{$row[2]}'. Must be positive number"
+                            'error' => "Invalid amount: '{$row[2]}'. Harus angka positif"
                         ];
                         continue;
                     }
@@ -349,261 +349,316 @@ class ExcelController extends Controller
     }
 
     public function analyzeData(Request $request)
-    {
-        try {
-            $records = FinancialRecord::all();
+{
+    try {
+        $totalRecords = FinancialRecord::count();
 
-            $issues = [
-                'duplicates' => ['count' => 0, 'groups' => []],
-                'missing_descriptions' => ['count' => 0, 'records' => []],
-                'outliers' => ['count' => 0, 'records' => []],
-                'unusual_dates' => ['count' => 0, 'records' => []]
+        // === DUPLICATES ===
+        $duplicatesQuery = FinancialRecord::select('type', 'category', 'amount', 'date')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('type', 'category', 'amount', 'date')
+            ->havingRaw('COUNT(*) > 1')
+            ->get();
+
+        $duplicateGroups = [];
+
+        foreach ($duplicatesQuery as $dup) {
+            $records = FinancialRecord::where([
+                ['type', $dup->type],
+                ['category', $dup->category],
+                ['amount', $dup->amount],
+                ['date', $dup->date],
+            ])->get();
+
+            $duplicateGroups[] = [
+                'count' => $records->count(),
+                'ids' => $records->pluck('id')->values()->all(),
+                'sample' => [
+                    'type' => $dup->type,
+                    'category' => $dup->category,
+                    'amount' => (float) $dup->amount,
+                    'date' => $dup->date,
+                ],
+                'records' => $records->map(function ($r) {
+                    return [
+                        'id' => $r->id,
+                        'type' => $r->type,
+                        'category' => $r->category,
+                        'amount' => (float) $r->amount,
+                        'date' => $r->date,
+                    ];
+                })->values()->all()
             ];
+        }
 
-            $grouped = $records->groupBy(function($item) {
-                return $item->type . '|' . $item->category . '|' . $item->amount . '|' . $item->date;
-            });
+        // MISSING DESCRIPTION
+        // mengecek null, empty string, yang isinya hanya whitespace
+        $missingDescriptions = FinancialRecord::where(function($query) {
+            $query->whereNull('description')
+                  ->orWhere('description', '')
+                  ->orWhereRaw('TRIM(description) = ""')
+                  ->orWhereRaw('description = category');
+        })->get();
 
-            foreach ($grouped as $key => $group) {
-                if ($group->count() > 1) {
-                    $firstRecord = $group->first();
-                    $issues['duplicates']['groups'][] = [
-                        'count' => $group->count(),
-                        'sample' => [
-                            'type' => $firstRecord->type,
-                            'category' => $firstRecord->category,
-                            'amount' => (float)$firstRecord->amount,
-                            'date' => $firstRecord->date
-                        ],
-                        'records' => $group->map(function($r) {
+        // OUTLIER (nilai data yang menyimpang jauh dari nilai rata-rata / luar batas 3 simpangan baku)
+        $outlierRecords = [];
+        if ($totalRecords > 3) {
+            $amounts = FinancialRecord::pluck('amount')->toArray();
+            $mean = array_sum($amounts) / count($amounts);
+            $variance = array_sum(array_map(function($x) use ($mean) {
+                return pow($x - $mean, 2);
+            }, $amounts)) / count($amounts);
+            $stdDev = sqrt($variance);
+
+            if ($stdDev > 0) {
+                $outlierRecords = FinancialRecord::get()->filter(function($record) use ($mean, $stdDev) {
+                    return abs($record->amount - $mean) > (3 * $stdDev);
+                })->map(function($r) use ($mean, $stdDev) {
+                    return [
+                        'id' => $r->id,
+                        'type' => $r->type,
+                        'category' => $r->category,
+                        'amount' => (float) $r->amount,
+                        'date' => $r->date,
+                        'deviation' => round(abs($r->amount - $mean) / $stdDev, 2) . ' σ'
+                    ];
+                })->values()->all();
+            }
+        }
+
+        // UNUSUAL DATES (Tahun yang terlalu jauh ke depan (10 tahun ke atas) atau >= 10 tahun yang lalu)
+        $today = date('Y-m-d');
+        $oldDate = date('Y-m-d', strtotime('-10 years'));
+
+        $unusualDates = FinancialRecord::where('date', '>', $today)
+            ->orWhere('date', '<', $oldDate)
+            ->get()
+            ->map(function($r) use ($today) {
+                return [
+                    'id' => $r->id,
+                    'type' => $r->type,
+                    'category' => $r->category,
+                    'amount' => (float) $r->amount,
+                    'date' => $r->date,
+                    'issue' => $r->date > $today ? 'Tanggal di masa depan' : 'Tanggal yang sudah lama terjadi (>10 tahun)'
+                ];
+            })->values()->all();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_records' => $totalRecords,
+                'issues' => [
+                    'duplicates' => [
+                        'count' => count($duplicateGroups),
+                        'groups' => $duplicateGroups,
+                    ],
+                    'missing_descriptions' => [
+                        'count' => $missingDescriptions->count(),
+                        'records' => $missingDescriptions->map(function($r) {
                             return [
                                 'id' => $r->id,
                                 'type' => $r->type,
                                 'category' => $r->category,
-                                'amount' => (float)$r->amount,
+                                'amount' => (float) $r->amount,
                                 'date' => $r->date
                             ];
-                        })->values()->all()
-                    ];
-                }
-            }
-            $issues['duplicates']['count'] = count($issues['duplicates']['groups']);
-
-            foreach ($records as $record) {
-                if (empty($record->description) || $record->description === $record->category) {
-                    $issues['missing_descriptions']['records'][] = [
-                        'id' => $record->id,
-                        'type' => $record->type,
-                        'category' => $record->category,
-                        'amount' => (float)$record->amount,
-                        'date' => $record->date
-                    ];
-                }
-            }
-            $issues['missing_descriptions']['count'] = count($issues['missing_descriptions']['records']);
-
-            if ($records->count() > 3) {
-                $amounts = $records->pluck('amount')->toArray();
-                $mean = array_sum($amounts) / count($amounts);
-                $variance = array_sum(array_map(function($x) use ($mean) {
-                    return pow($x - $mean, 2);
-                }, $amounts)) / count($amounts);
-                $stdDev = sqrt($variance);
-
-                if ($stdDev > 0) {
-                    foreach ($records as $record) {
-                        if (abs($record->amount - $mean) > (3 * $stdDev)) {
-                            $issues['outliers']['records'][] = [
-                                'id' => $record->id,
-                                'type' => $record->type,
-                                'category' => $record->category,
-                                'amount' => (float)$record->amount,
-                                'date' => $record->date
-                            ];
-                        }
-                    }
-                }
-                $issues['outliers']['count'] = count($issues['outliers']['records']);
-            }
-
-            $today = date('Y-m-d');
-            $oldDate = date('Y-m-d', strtotime('-10 years'));
-
-            foreach ($records as $record) {
-                if ($record->date > $today || $record->date < $oldDate) {
-                    $issues['unusual_dates']['records'][] = [
-                        'id' => $record->id,
-                        'type' => $record->type,
-                        'category' => $record->category,
-                        'amount' => (float)$record->amount,
-                        'date' => $record->date,
-                        'issue' => $record->date > $today ? 'Future date' : 'Very old date (>10 years)'
-                    ];
-                }
-            }
-            $issues['unusual_dates']['count'] = count($issues['unusual_dates']['records']);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'total_records' => $records->count(),
-                    'issues' => $issues
+                        })->take(50)->values()->all(),
+                    ],
+                    'outliers' => [
+                        'count' => count($outlierRecords),
+                        'records' => $outlierRecords,
+                    ],
+                    'unusual_dates' => [
+                        'count' => count($unusualDates),
+                        'records' => $unusualDates,
+                    ],
                 ]
-            ]);
+            ]
+        ]);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Analyze error: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     public function cleanData(Request $request)
-    {
-        try {
-            $action = $request->input('action');
-            $recordIds = $request->input('record_ids', []);
+{
+    try {
+        $action = $request->input('action');
+        $recordIds = $request->input('record_ids', []);
+        $cleaned = 0;
 
-            if (empty($recordIds)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No record IDs provided'
-                ], 400);
-            }
+        switch ($action) {
 
-            $cleaned = 0;
-
-            switch ($action) {
-                case 'remove_duplicates':
+            case 'remove_duplicates':
+                if (!empty($recordIds)) {
                     if (count($recordIds) > 1) {
-                        $keepId = $recordIds[0];
                         $deleteIds = array_slice($recordIds, 1);
                         FinancialRecord::whereIn('id', $deleteIds)->delete();
                         $cleaned = count($deleteIds);
                     }
-                    break;
+                } else {
+                    // GLOBAL duplicate cleaning
+                    $duplicates = FinancialRecord::select('type', 'category', 'amount', 'date')
+                        ->selectRaw('GROUP_CONCAT(id ORDER BY id) as ids, COUNT(*) as cnt')
+                        ->groupBy('type', 'category', 'amount', 'date')
+                        ->havingRaw('COUNT(*) > 1')
+                        ->get();
 
-                case 'fill_descriptions':
-                    foreach ($recordIds as $id) {
-                        $record = FinancialRecord::find($id);
-                        if ($record) {
-                            $record->description = ucfirst($record->type) . ' - ' . $record->category;
-                            $record->save();
-                            $cleaned++;
+                    foreach ($duplicates as $dup) {
+                        $ids = array_map('intval', explode(',', $dup->ids));
+                        array_shift($ids); // keep first
+                        if (!empty($ids)) {
+                            FinancialRecord::whereIn('id', $ids)->delete();
+                            $cleaned += count($ids);
                         }
                     }
-                    break;
+                }
+                break;
 
-                case 'delete_records':
-                    FinancialRecord::whereIn('id', $recordIds)->delete();
-                    $cleaned = count($recordIds);
-                    break;
-
-                default:
+            case 'fill_descriptions':
+                if (empty($recordIds)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Unknown action: ' . $action
+                        'message' => 'No record IDs provided'
                     ], 400);
-            }
+                }
 
-            return response()->json([
-                'success' => true,
-                'message' => "Cleaned {$cleaned} records",
-                'data' => [
-                    'cleaned_count' => $cleaned
-                ]
-            ]);
+                foreach ($recordIds as $id) {
+                    $record = FinancialRecord::find($id);
+                    if ($record) {
+                        $record->description =
+                            ucfirst($record->type) . ' - ' . $record->category;
+                        $record->save();
+                        $cleaned++;
+                    }
+                }
+                break;
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            case 'delete_records':
+                if (empty($recordIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No record IDs provided'
+                    ], 400);
+                }
+
+                FinancialRecord::whereIn('id', $recordIds)->delete();
+                $cleaned = count($recordIds);
+                break;
+
+            default:
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unknown action'
+                ], 400);
         }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Cleaned {$cleaned} records",
+            'data' => [
+                'cleaned_count' => $cleaned
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Cleaning error: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     public function pivot(Request $request)
-    {
-        try {
-            $groupBy = $request->input('group_by', 'category');
-            $aggregate = $request->input('aggregate', 'sum');
+{
+    try {
+        $groupBy = $request->input('group_by', 'category');
+        $aggregate = $request->input('aggregate', 'sum');
 
-            $records = FinancialRecord::all();
+        $query = FinancialRecord::query();
 
-            if ($records->isEmpty()) {
+        // FIELD MAPPING
+        switch ($groupBy) {
+            case 'type':
+                $query->select('type as label');
+                break;
+            case 'category':
+                $query->select('category as label');
+                break;
+            case 'year':
+                $query->selectRaw('YEAR(date) as label');
+                break;
+            case 'month':
+                $query->selectRaw('MONTH(date) as label');
+                break;
+            case 'quarter':
+                $query->selectRaw('QUARTER(date) as label');
+                break;
+            default:
                 return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'rows' => [],
-                        'summary' => [
-                            'total_records' => 0,
-                            'total_groups' => 0
-                        ]
-                    ]
-                ]);
-            }
-
-            $grouped = $records->groupBy(function($record) use ($groupBy) {
-                switch ($groupBy) {
-                    case 'type': return $record->type;
-                    case 'category': return $record->category;
-                    case 'year': return date('Y', strtotime($record->date));
-                    case 'month': return date('Y-m', strtotime($record->date));
-                    case 'quarter':
-                        $year = date('Y', strtotime($record->date));
-                        $quarter = ceil(date('n', strtotime($record->date)) / 3);
-                        return "{$year}-Q{$quarter}";
-                    default: return $record->category;
-                }
-            });
-
-            $results = [];
-            foreach ($grouped as $key => $group) {
-                $amounts = $group->pluck('amount')->map(function($v) {
-                    return (float)$v;
-                });
-
-                $value = 0;
-                switch ($aggregate) {
-                    case 'sum': $value = $amounts->sum(); break;
-                    case 'avg': $value = $amounts->avg(); break;
-                    case 'count': $value = $amounts->count(); break;
-                    case 'min': $value = $amounts->min(); break;
-                    case 'max': $value = $amounts->max(); break;
-                }
-
-                $results[] = [
-                    'label' => (string)$key,
-                    'value' => round($value, 2),
-                    'count' => $group->count()
-                ];
-            }
-
-            usort($results, function($a, $b) {
-                return $b['value'] <=> $a['value'];
-            });
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'rows' => $results,
-                    'summary' => [
-                        'total_records' => $records->count(),
-                        'total_groups' => count($results),
-                        'group_by' => $groupBy,
-                        'aggregate' => $aggregate
-                    ]
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+                    'success' => false,
+                    'message' => 'Invalid group_by'
+                ], 400);
         }
+
+        // AGGREGATION
+        switch ($aggregate) {
+            case 'sum':
+                $query->selectRaw('SUM(amount) as value');
+                break;
+            case 'avg':
+                $query->selectRaw('AVG(amount) as value');
+                break;
+            case 'count':
+                $query->selectRaw('COUNT(*) as value');
+                break;
+            case 'min':
+                $query->selectRaw('MIN(amount) as value');
+                break;
+            case 'max':
+                $query->selectRaw('MAX(amount) as value');
+                break;
+            default:
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid aggregate'
+                ], 400);
+        }
+
+        $query->selectRaw('COUNT(*) as count');
+        $query->groupBy('label');
+
+        $results = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'rows' => $results->map(function ($row) {
+                    return [
+                        'label' => $row->label ?? 'Unknown',
+                        'value' => (float) $row->value,
+                        'count' => (int) $row->count,
+                    ];
+                }),
+                'summary' => [
+                    'total_groups' => $results->count(),
+                    'total_records' => FinancialRecord::count(),
+                ]
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Pivot error: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     public function validateAndClean(Request $request) {
         return response()->json(['success' => true, 'data' => []]);
