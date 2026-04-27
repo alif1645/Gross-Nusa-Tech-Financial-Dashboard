@@ -7,12 +7,12 @@ export default function DataCleaning({ token, onCleanComplete }) {
     const [loading, setLoading] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
 
-    const API_URL = 'http://localhost:8000/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const analyzeData = async () => {
         setAnalyzing(true);
         try {
-            const response = await fetch(`${API_URL}/excel/analyze-data`, {
+            const response = await fetch(`${API_URL}/api/excel/analyze-data`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 }
@@ -53,7 +53,7 @@ export default function DataCleaning({ token, onCleanComplete }) {
 
             console.log('Sending request:', requestBody);
 
-            const response = await fetch(`${API_URL}/excel/clean-data`, {
+            const response = await fetch(`${API_URL}/api/excel/analyze-data`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

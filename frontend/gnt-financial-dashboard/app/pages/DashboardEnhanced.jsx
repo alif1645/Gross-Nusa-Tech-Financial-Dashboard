@@ -10,7 +10,7 @@ import DataCleaning from '../components/DataCleaning';
 import PivotTable from '../components/PivotTable';
 import FilterBar from '../components/FilterBar';
 import RecordHistory from '../components/RecordHistory';
-import LogoutButton from '../Components/LogoutButton';
+import LogoutButton from '../components/LogoutButton';
 import CleanupButton from '../components/CleanupButton';
 
 export default function Dashboard() {

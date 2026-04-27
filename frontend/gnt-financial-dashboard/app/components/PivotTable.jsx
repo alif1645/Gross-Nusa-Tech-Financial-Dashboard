@@ -11,22 +11,20 @@ export default function PivotTable({ token }) {
     const [results, setResults] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const API_URL = 'http://localhost:8000/api'; // FIXED: Correct backend URL
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const generatePivot = async () => {
         setLoading(true);
         try {
-            // Map rowField to backend's group_by parameter
             const groupBy = rowField;
             const aggregate = aggregation;
 
-            // FIXED: Use correct URL and parameters
-            const url = `${API_URL}/excel/pivot?group_by=${groupBy}&aggregate=${aggregate}`;
+            const url = `${API_URL}/api/excel/pivot?group_by=${groupBy}&aggregate=${aggregate}`;
             
             console.log('Fetching pivot from:', url);
 
             const response = await fetch(url, {
-                method: 'GET', // FIXED: Must be GET
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',

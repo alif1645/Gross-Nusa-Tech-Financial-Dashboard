@@ -9,7 +9,7 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
     const [error, setError] = useState(null);
     const [debugInfo, setDebugInfo] = useState(null);
 
-    const API_URL = 'http://localhost:8000/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -37,7 +37,7 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
             console.log('📤 Uploading to:', `${API_URL}/excel/upload`);
             console.log('📁 File:', file.name, file.type, file.size);
 
-            const response = await fetch(`${API_URL}/excel/upload`, {
+            const response = await fetch(`${API_URL}/api/excel/upload`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

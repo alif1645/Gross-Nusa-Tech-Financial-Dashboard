@@ -8,7 +8,7 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
 
-    const API_URL = 'http://localhost:8000/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -33,7 +33,7 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
         formData.append('file', file);
 
         try {
-            const response = await fetch(`${API_URL}/excel/upload`, {
+            const response = await fetch(`${API_URL}/api/excel/upload`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -77,22 +77,6 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
 
     const handleExport = () => {
         window.open(`${API_URL}/excel/export`, '_blank');
-    };
-
-    const testAPI = async () => {
-        try {
-            const response = await fetch(`${API_URL}/test`);
-            const text = await response.text();
-            
-            try {
-                const json = JSON.parse(text);
-                alert('✅ API is working! ' + json.message);
-            } catch (e) {
-                alert('❌ API returned non-JSON: ' + text.substring(0, 100));
-            }
-        } catch (error) {
-            alert('❌ API test failed: ' + error.message);
-        }
     };
 
     return (
