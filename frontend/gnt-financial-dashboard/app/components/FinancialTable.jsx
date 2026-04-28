@@ -38,9 +38,9 @@ export default function FinancialTable({ records, meta, token, onPageChange, onR
     };
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('id-ID', {
             style: 'currency',
-            currency: 'USD'
+            currency: 'IDR'
         }).format(amount);
     };
 

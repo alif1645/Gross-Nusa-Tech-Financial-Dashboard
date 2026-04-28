@@ -33,7 +33,7 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
         formData.append('file', file);
 
         try {
-            const response = await fetch(`${API_URL}/api/excel/upload`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/excel/upload`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

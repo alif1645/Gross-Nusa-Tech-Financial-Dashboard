@@ -12,7 +12,7 @@ export default function DataCleaning({ token, onCleanComplete }) {
     const analyzeData = async () => {
         setAnalyzing(true);
         try {
-            const response = await fetch(`${API_URL}/api/excel/analyze-data`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/excel/analyze-data`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 }
