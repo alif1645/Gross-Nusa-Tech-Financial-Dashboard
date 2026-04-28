@@ -11,7 +11,7 @@ export default function FinancialTable({ records, meta, token, onPageChange, onR
         }
         
         try {
-            const response = await fetch(`http://localhost:8000/api/financial-records/${id}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financial-records/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,

@@ -31,7 +31,7 @@ export default function ExcelViewerEnhanced({ token }) {
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://localhost:8000/api/excel/view', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/excel/view`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

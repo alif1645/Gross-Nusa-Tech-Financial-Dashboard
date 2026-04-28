@@ -60,7 +60,7 @@ export default function Dashboard() {
                 Object.entries(filterParams).filter(([_, v]) => v)
             );
             
-            const response = await fetch(`http://localhost:8000/api/financial-records?${params}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financial-records?${params}`, {
                 headers: {
                     'Authorization': `Bearer ${auth.token}`,
                     'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ export default function Dashboard() {
     // Summary stats
     const fetchSummary = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/financial-summary', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financial-summary`, {
                 headers: {
                     'Authorization': `Bearer ${auth.token}`,
                     'Content-Type': 'application/json',

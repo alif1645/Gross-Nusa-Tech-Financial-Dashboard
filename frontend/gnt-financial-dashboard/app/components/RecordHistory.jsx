@@ -7,7 +7,7 @@ export default function RecordHistory({ recordId, token, onClose }) {
     useEffect(() => {
         const fetchHistory = async () => {
         try {
-            const response = await fetch(`http://localhost:8000/api/financial-records/${recordId}/history`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financial-records/${recordId}/history`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',

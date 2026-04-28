@@ -17,7 +17,7 @@ export default function CleanupButton({ token, onCleanupSuccess }) {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/financial-records/delete-all', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financial-records/delete-all`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,

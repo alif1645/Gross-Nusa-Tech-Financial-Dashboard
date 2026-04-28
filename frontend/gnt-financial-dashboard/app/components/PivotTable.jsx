@@ -19,7 +19,7 @@ export default function PivotTable({ token }) {
             const groupBy = rowField;
             const aggregate = aggregation;
 
-            const url = `${API_URL}/api/excel/pivot?group_by=${groupBy}&aggregate=${aggregate}`;
+            const url = `${process.env.NEXT_PUBLIC_API_URL}/excel/pivot?group_by=${groupBy}&aggregate=${aggregate}`;
             
             console.log('Fetching pivot from:', url);
 
