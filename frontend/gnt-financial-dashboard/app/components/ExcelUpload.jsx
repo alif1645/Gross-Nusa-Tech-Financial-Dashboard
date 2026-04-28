@@ -72,11 +72,11 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
     };
 
     const handleDownloadTemplate = () => {
-        window.open(`${API_URL}/excel/template`, '_blank');
+        window.open(`${process.env.NEXT_PUBLIC_API_URL}/excel/template`, '_blank');
     };
 
     const handleExport = () => {
-        window.open(`${API_URL}/excel/export`, '_blank');
+        window.open(`${process.env.NEXT_PUBLIC_API_URL}/excel/export`, '_blank');
     };
 
     return (

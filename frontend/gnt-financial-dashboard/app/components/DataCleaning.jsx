@@ -53,7 +53,7 @@ export default function DataCleaning({ token, onCleanComplete }) {
 
             console.log('Sending request:', requestBody);
 
-            const response = await fetch(`${API_URL}/api/excel/analyze-data`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/excel/analyze-data`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

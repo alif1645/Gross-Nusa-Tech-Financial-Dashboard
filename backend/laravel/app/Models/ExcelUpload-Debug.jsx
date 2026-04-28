@@ -34,10 +34,10 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
         formData.append('file', file);
 
         try {
-            console.log('📤 Uploading to:', `${API_URL}/excel/upload`);
+            console.log('📤 Uploading to:', `${process.env.NEXT_PUBLIC_API_URL}/excel/upload`);
             console.log('📁 File:', file.name, file.type, file.size);
 
-            const response = await fetch(`${API_URL}/api/excel/upload`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/excel/upload`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -96,12 +96,12 @@ export default function ExcelUpload({ token, onUploadSuccess }) {
 
     const handleDownloadTemplate = () => {
         // Open in new tab for download
-        window.open(`${API_URL}/excel/template`, '_blank');
+        window.open(`${process.env.NEXT_PUBLIC_API_URL}/excel/template`, '_blank');
     };
 
     const handleExport = () => {
         // Open in new tab for download
-        window.open(`${API_URL}/excel/export`, '_blank');
+        window.open(`${process.env.NEXT_PUBLIC_API_URL}/excel/export`, '_blank');
     };
 
     return (
