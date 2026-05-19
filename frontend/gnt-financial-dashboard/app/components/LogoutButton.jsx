@@ -13,7 +13,7 @@ export default function LogoutButton() {
             localStorage.removeItem('loginTime');
             
             // Redirect to login page
-            router.push('/');
+            router.replace('/');
         }
     };
 

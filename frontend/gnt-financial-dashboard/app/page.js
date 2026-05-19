@@ -11,8 +11,8 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const STAFF_USERNAME = 'grossnusatech';  // Bisa diganti
-    const STAFF_PASSWORD = 'admin';  // Bisa diganti
+    const STAFF_USERNAME = process.env.NEXT_PUBLIC_STAFF_USERNAME
+    const STAFF_PASSWORD = process.env.NEXT_PUBLIC_STAFF_PASSWORD
 
     const handleLogin = (e) => {
         e.preventDefault();
@@ -23,7 +23,7 @@ export default function LoginPage() {
             // Store login status in localStorage
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('username', username);
-            localStorage.setItem('loginTime', new Date().toISOString());
+            localStorage.setItem('loginTime', Date.now().toString());
             
             // Masuk ke dashboard
             router.push('/dashboard');

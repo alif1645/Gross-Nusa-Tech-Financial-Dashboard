@@ -5,27 +5,43 @@ import { useRouter } from 'next/navigation';
 
 export default function ProtectedRoute({ children }) {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(true);
+    const [isChecking, setIsChecking] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        // Check authentication status
         const checkAuth = () => {
             const loggedIn = localStorage.getItem('isLoggedIn');
+            const loginTime = localStorage.getItem('loginTime');
             
-            if (loggedIn === 'true') {
-                setIsAuthenticated(true);
+            // Cek sesi login
+            const now = Date.now();
+            const sessionDuration = 24 * 60 * 60 * 1000; // 24 jam dalam milidetik
+            
+            if (loggedIn === 'true' && loginTime) {
+                const timeElapsed = now - parseInt(loginTime);
+                
+                if (timeElapsed < sessionDuration) {
+                    // Valid session
+                    setIsAuthenticated(true);
+                    setIsChecking(false);
+                } else {
+                    // Session expired
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('loginTime');
+                    router.replace('/'); // Use replace to prevent back button bypass
+                    setIsChecking(false);
+                }
             } else {
-                router.push('/');
+                // Tidak logged in
+                router.replace('/');
+                setIsChecking(false);
             }
-            
-            setIsLoading(false);
         };
 
         checkAuth();
     }, [router]);
 
-    if (isLoading) {
+    if (isChecking) {
         return (
             <div className="min-h-screen bg-gray-100 flex items-center justify-center">
                 <div className="text-center">
